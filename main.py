@@ -19,7 +19,6 @@ def add_captain():
         db_sess.commit()
     except BaseException as err:
         db_sess.rollback()
-        raise err
 
 
 def main():
