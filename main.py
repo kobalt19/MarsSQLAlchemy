@@ -1,9 +1,11 @@
-import flask
+import datetime as dt
+from flask import Flask
 from flask_restful import Api
 from data import db_session, users_resources
 from data.users import User
+from data.jobs import Jobs
 
-app = flask.Flask(__name__)
+app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 
 db_session.global_init('db/mars.db')
@@ -58,10 +60,26 @@ def add_captain():
         raise err
 
 
+def add_job():
+    first_job = Jobs(
+        team_leader=1,
+        job='deployment of residential modules 1 and 2',
+        work_size=15,
+        collaborators='2, 3',
+        start_date=dt.datetime.now(),
+    )
+    try:
+        db_sess.add(first_job)
+        db_sess.commit()
+    except BaseException as err:
+        db_sess.rollback()
+        raise err
+
+
 def main():
     api.add_resource(users_resources.UsersListResource, '/api/v2/users')
     api.add_resource(users_resources.UsersResource, '/api/v2/users/<int:user_id>')
-    add_captain()
+    add_job()
     app.run(host='127.0.0.1', port=8080)
 
 

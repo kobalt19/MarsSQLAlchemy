@@ -4,7 +4,7 @@ from sqlalchemy_serializer import SerializerMixin
 from .db_session import SqlAlchemyBase
 
 
-class Jobs(SqlAlchemyBase, SerializerMixin):
+class Jobs(SqlAlchemyBase):
     __tablename__ = 'jobs'
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     team_leader = sa.Column(sa.Integer, sa.ForeignKey('users.id'))
