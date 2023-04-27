@@ -1,5 +1,5 @@
 import datetime as dt
-from flask import Flask
+from flask import Flask, render_template
 from flask_restful import Api
 from data import db_session, users_resources
 from data.users import User
@@ -12,6 +12,11 @@ db_session.global_init('db/mars.db')
 db_sess = db_session.create_session()
 
 api = Api(app)
+
+
+def fullname(job):
+    worker = db_sess.get(User, job.team_leader)
+    return f'{worker.surname} {worker.name}'
 
 
 def add_captain():
@@ -76,10 +81,21 @@ def add_job():
         raise err
 
 
+@app.route('/')
+@app.route('/index')
+def index():
+    works_list = db_sess.query(Jobs).all()
+    kwargs = {
+        'title': 'Works log',
+        'works_list': works_list,
+        'fullname': fullname,
+    }
+    return render_template('index.html', **kwargs)
+
+
 def main():
     api.add_resource(users_resources.UsersListResource, '/api/v2/users')
     api.add_resource(users_resources.UsersResource, '/api/v2/users/<int:user_id>')
-    add_job()
     app.run(host='127.0.0.1', port=8080)
 
 

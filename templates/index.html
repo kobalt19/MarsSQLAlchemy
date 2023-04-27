@@ -1,25 +1,33 @@
 {% extends "base.html" %}
-
 {% block content %}
-    <h1>Записи в блоге</h1>
-    {% if current_user.is_authenticated %}
-        <a href="news" class="btn btn-secondary">Добавить новость</a>
-    {% endif %}
-    {% for item in news %}
-        <div class="col-md6 border rounded">
-            <h2>{{ item.title }}</h2>
-            <div>
-                {{ item.content }}
-            </div>
-            <div>
-                Автор - {{ item.user.name }}, Дата написания - {{ item.created_date }}
-            </div>
-            {% if current_user.is_authenticated and current_user == item.user %}
-                <div>
-                    <a href="/news/{{ item.id }}" class="btn btn-warning">Изменить</a>
-                    <a href="/news_delete/{{ item.id }}" class="btn btn-danger">Удалить</a>
-                </div>
-            {% endif %}
-        </div>
-    {% endfor %}
+	<h2> Works log </h2>
+	{% for work in works_list %}
+		<p>
+			<h3> Action # {{ loop.index }} </h3>
+			<table class="table">
+				<thead>
+					<tr>
+						<th scope="col"> Title of activity </th>
+						<th scope="col"> Team leader </th>
+						<th scope="col"> Duration </th>
+						<th scope="col"> List of collaborators </th>
+						<th scope="col"> Is finished </th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<th class="table-primary"> {{ work.job }} </th>
+						<th class="table-primary"> {{ fullname(work) }} </th>
+						<th class="table-primary"> {{ work.work_size }} hours </th>
+						<th class="table-primary"> {{ work.collaborators }} </th>
+						{% if work.is_finished %}
+							<th class="table-success"> Is finished </th>
+						{% else %}
+							<th class="table-danger"> Is not finished </th>
+						{% endif %}
+					</tr>
+				</tbody>
+			</table>
+		</p>
+	{% endfor %}
 {% endblock %}
