@@ -1,6 +1,6 @@
 import datetime as dt
 from flask import Flask, redirect, render_template
-from flask_login import current_user, LoginManager, login_user
+from flask_login import current_user, LoginManager, login_user, login_required, logout_user
 from flask_restful import Api
 from data import db_session, users_resources
 from data.users import User
@@ -183,6 +183,13 @@ def add_job():
             raise err
         return redirect('/')
     return render_template('add_job.html', title='Добавление формы', form=form)
+
+
+@login_required
+@app.route('/logout/')
+def logout():
+    logout_user()
+    return redirect('/')
 
 
 def main():
