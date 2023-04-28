@@ -161,6 +161,22 @@ def edit_job(id_):
     return render_template('add_job.html', title='Редактирование работы', form=form)
 
 
+@app.route('/delete_job/<int:id_>')
+def delete_job(id_):
+    job = db_sess.get(Jobs, id_)
+    if not current_user.is_authenticated or (job and job.team_leader not in {1, current_user.id}):
+        return render_template('error.html', title='Ошибка!', message='У вас нет прав на удаление этой работы!')
+    if not job:
+        return render_template('error.html', title='Ошибка!', message='Работа с указанным id не найдена!')
+    try:
+        db_sess.delete(job)
+        db_sess.commit()
+    except BaseException as err:
+        db_sess.rollback()
+        raise err
+    return redirect('/')
+
+
 @login_required
 @app.route('/logout/')
 def logout():
