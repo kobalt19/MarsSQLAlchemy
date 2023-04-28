@@ -33,68 +33,6 @@ def fullname(job):
     return f'{worker.surname} {worker.name}'
 
 
-def add_captain():
-    user1 = User(
-        surname='Scott',
-        name='Ridley',
-        age=21,
-        position='captain',
-        speciality='research engineer',
-        address='module_1',
-        email='scott_chief@mars.org'
-    )
-    user2 = User(
-        surname='Weer',
-        name='Andy',
-        age=24,
-        position='navigator',
-        speciality='astrogeologist',
-        address='module_1',
-        email='weer_navigator@mars.org'
-    )
-    user3 = User(
-        surname='Watney',
-        name='Mark',
-        age=20,
-        position='steering',
-        speciality='cyberengineer',
-        address='module_2',
-        email='watney_sttering@mars.org'
-    )
-    user4 = User(
-        surname='Kapoor',
-        name='Venkata',
-        age=22,
-        position='researcher',
-        speciality='meteorologist',
-        address='module_1',
-        email='kapoor_researcher@mars.org'
-    )
-    try:
-        for user in {user1, user2, user3, user4}:
-            db_sess.add(user)
-        db_sess.commit()
-    except BaseException as err:
-        db_sess.rollback()
-        raise err
-
-
-def add_job():
-    first_job = Jobs(
-        team_leader=1,
-        job='deployment of residential modules 1 and 2',
-        work_size=15,
-        collaborators='2, 3',
-        start_date=dt.datetime.now(),
-    )
-    try:
-        db_sess.add(first_job)
-        db_sess.commit()
-    except BaseException as err:
-        db_sess.rollback()
-        raise err
-
-
 @app.route('/')
 @app.route('/index')
 def index():
@@ -156,17 +94,17 @@ def add_job():
     if form.validate_on_submit():
         team_leader = db_sess.get(User, form.team_leader.data)
         if not team_leader:
-            return render_template('add_job.html', title='Добавление формы', form=form,
+            return render_template('add_job.html', title='Добавление работы', form=form,
                                    message='Руководитель работы не найден')
         try:
             collaborators = [db_sess.get(User, id_) for id_ in map(int, form.collaborators.data.split(', '))]
             assert collaborators and all(collaborators)
         except (AssertionError, ValueError):
-            return render_template('add_job.html', title='Добавление формы', form=form,
+            return render_template('add_job.html', title='Добавление работы', form=form,
                                    message='Неправильное значение поля сотрудников')
         if form.start_date.data > form.end_date.data:
-            return render_template('add_job.html', title='Добавление формы', form=form,
-                                   message='Дата начала работы позже даты её ококнчания')
+            return render_template('add_job.html', title='Добавление работы', form=form,
+                                   message='Дата начала работы позже даты её окончания')
         job = Jobs(
             team_leader=form.team_leader.data,
             job=form.job_desc.data,
@@ -182,7 +120,45 @@ def add_job():
             db_sess.rollback()
             raise err
         return redirect('/')
-    return render_template('add_job.html', title='Добавление формы', form=form)
+    return render_template('add_job.html', title='Добавление работы', form=form)
+
+
+@app.route('/edit_job/<int:id_>', methods={'GET', 'POST'})
+def edit_job(id_):
+    form = AddJobForm()
+    if form.validate_on_submit():
+        job = db_sess.get(Jobs, id_)
+        if not current_user.is_authenticated or job.team_leader not in {1, current_user.id}:
+            return render_template('add_job.html', title='Редактирование работы', form=form,
+                                   message='У вас нет прав на редактирование этой работы!')
+        if not job:
+            return render_template('add_job.html', title='')
+        team_leader = db_sess.get(User, form.team_leader.data)
+        if not team_leader:
+            return render_template('add_job.html', title='Редактирование работы', form=form,
+                                   message='Руководитель работы не найден')
+        try:
+            collaborators = [db_sess.get(User, id_) for id_ in map(int, form.collaborators.data.split(', '))]
+            assert collaborators and all(collaborators)
+        except (AssertionError, ValueError):
+            return render_template('add_job.html', title='Редактирование работы', form=form,
+                                   message='Неправильное значение поля сотрудников')
+        if form.start_date.data > form.end_date.data:
+            return render_template('add_job.html', title='Редактирование работы', form=form,
+                                   message='Дата начала работы позже даты её окончания')
+        try:
+            job.team_leader = form.team_leader.data
+            job.job = form.job_desc.data
+            job.work_size = form.work_size.data
+            job.collaborators = form.collaborators.data
+            job.start_date = form.start_date.data
+            job.end_date = form.end_date.data
+            db_sess.commit()
+        except BaseException as err:
+            db_sess.rollback()
+            raise err
+        return redirect('/')
+    return render_template('add_job.html', title='Редактирование работы', form=form)
 
 
 @login_required
