@@ -1,18 +1,30 @@
 import datetime as dt
 from flask import Flask, redirect, render_template
+from flask_login import current_user, LoginManager, login_user
 from flask_restful import Api
 from data import db_session, users_resources
 from data.users import User
 from data.jobs import Jobs
-from forms.user import RegisterForm
+from forms.user import LoginForm, RegisterForm
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
+app.config['PERMANENT_SESSION_LIFETIME'] = dt.timedelta(
+    days=365
+)
+
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 db_session.global_init('db/mars_explorer.db')
 db_sess = db_session.create_session()
 
 api = Api(app)
+
+
+@login_manager.user_loader
+def load_user(id_):
+    return db_sess.get(User, id_)
 
 
 def fullname(job):
@@ -119,8 +131,22 @@ def register():
         except BaseException as err:
             db_sess.rollback()
             raise err
-        return redirect('/')
+        return redirect('/login/')
     return render_template('register.html', title='Регистрация', form=form)
+
+
+@app.route('/login/', methods={'GET', 'POST'})
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = db_sess.query(User).filter(User.email == form.email.data).first()
+        if not user:
+            return render_template('login.html', title='Авторизация', form=form, message='Пользователь не найден!')
+        if not user.check_password(form.password.data):
+            return render_template('login.html', title='Авторизация', form=form, message='Пароль неверный!')
+        login_user(user, remember=form.remember_me.data)
+        return redirect('/')
+    return render_template('login.html', title='Авторизация', form=form)
 
 
 def main():
