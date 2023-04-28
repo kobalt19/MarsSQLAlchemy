@@ -6,6 +6,7 @@ from data import db_session, users_resources
 from data.users import User
 from data.jobs import Jobs
 from forms.user import LoginForm, RegisterForm
+from forms.job import AddJobForm
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -147,6 +148,41 @@ def login():
         login_user(user, remember=form.remember_me.data)
         return redirect('/')
     return render_template('login.html', title='Авторизация', form=form)
+
+
+@app.route('/add_job/', methods={'GET', 'POST'})
+def add_job():
+    form = AddJobForm()
+    if form.validate_on_submit():
+        team_leader = db_sess.get(User, form.team_leader.data)
+        if not team_leader:
+            return render_template('add_job.html', title='Добавление формы', form=form,
+                                   message='Руководитель работы не найден')
+        try:
+            collaborators = [db_sess.get(User, id_) for id_ in map(int, form.collaborators.data.split(', '))]
+            assert collaborators and all(collaborators)
+        except (AssertionError, ValueError):
+            return render_template('add_job.html', title='Добавление формы', form=form,
+                                   message='Неправильное значение поля сотрудников')
+        if form.start_date.data > form.end_date.data:
+            return render_template('add_job.html', title='Добавление формы', form=form,
+                                   message='Дата начала работы позже даты её ококнчания')
+        job = Jobs(
+            team_leader=form.team_leader.data,
+            job=form.job_desc.data,
+            work_size=form.work_size.data,
+            collaborators=form.collaborators.data,
+            start_date=form.start_date.data,
+            end_date=form.end_date.data,
+        )
+        try:
+            db_sess.add(job)
+            db_sess.commit()
+        except BaseException as err:
+            db_sess.rollback()
+            raise err
+        return redirect('/')
+    return render_template('add_job.html', title='Добавление формы', form=form)
 
 
 def main():
