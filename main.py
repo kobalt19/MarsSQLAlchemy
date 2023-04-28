@@ -1,9 +1,10 @@
 import datetime as dt
-from flask import Flask, render_template
+from flask import Flask, redirect, render_template
 from flask_restful import Api
 from data import db_session, users_resources
 from data.users import User
 from data.jobs import Jobs
+from forms.user import RegisterForm
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -91,6 +92,35 @@ def index():
         'fullname': fullname,
     }
     return render_template('index.html', **kwargs)
+
+
+@app.route('/register/', methods={'POST', 'GET'})
+def register():
+    form = RegisterForm()
+    if form.validate_on_submit():
+        if form.password.data != form.password_again.data:
+            return render_template('register.html', form=form, message='Пароли не совпадают!', title='Регистрация')
+        if db_sess.query(User).filter(User.email == form.login.data).first():
+            return render_template('register.html', form=form, message='Такой пользователь уже есть!',
+                                   title='Регистрация')
+        user = User(
+            surname=form.surname.data,
+            name=form.name.data,
+            age=form.age.data,
+            position=form.position.data,
+            speciality=form.speciality.data,
+            address=form.address.data,
+            email=form.login.data,
+        )
+        user.set_password(form.password.data)
+        try:
+            db_sess.add(user)
+            db_sess.commit()
+        except BaseException as err:
+            db_sess.rollback()
+            raise err
+        return redirect('/')
+    return render_template('register.html', title='Регистрация', form=form)
 
 
 def main():

@@ -1,25 +1,16 @@
 from flask_wtf import FlaskForm
-from wtforms import PasswordField, StringField, TextAreaField, SubmitField, BooleanField
-from wtforms.fields import EmailField
+from wtforms import IntegerField, PasswordField, StringField, SubmitField
 from wtforms.validators import DataRequired
 
 
 class RegisterForm(FlaskForm):
-    email = EmailField('Почта', validators=[DataRequired()])
-    password = PasswordField('Пароль', validators=[DataRequired()])
-    password_again = PasswordField('Повторите пароль', validators=[DataRequired()])
-    name = StringField('Имя пользователя', validators=[DataRequired()])
-    about = TextAreaField("Немного о себе")
-    submit = SubmitField('Создать')
-
-
-# 5. Сделаем форму авторизации пользователя, назовем ее LoginForm.
-# Она будет практически совпадать с той,
-# что мы делали на уроке знакомства с flask-wtf:
-# далее п. 6: Сделаем к ней шаблон login.html
-# далее п. 7: И, наконец, сделаем обработчик адреса /login: см файл main.py
-class LoginForm(FlaskForm):
-    email = EmailField('Почта', validators=[DataRequired()])
-    password = PasswordField('Пароль', validators=[DataRequired()])
-    remember_me = BooleanField('Запомнить меня')
-    submit = SubmitField('Войти')
+    login = StringField('Login / email', validators={DataRequired()})
+    password = PasswordField('Password', validators={DataRequired()})
+    password_again = PasswordField('Repeat password', validators={DataRequired()})
+    surname = StringField('Surname', validators={DataRequired()})
+    name = StringField('Name', validators={DataRequired()})
+    age = IntegerField('Age', validators={DataRequired()})
+    position = StringField('Position', validators={DataRequired()})
+    speciality = StringField('Speciality', validators={DataRequired()})
+    address = StringField('Address', validators={DataRequired()})
+    submit = SubmitField('Submit')
