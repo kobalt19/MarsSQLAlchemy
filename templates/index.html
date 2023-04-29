@@ -3,7 +3,7 @@
 	<h2 align="center"> Works log </h2>
 	{% if current_user.is_authenticated %}
 		<p>
-			<a type="button" href="add_job" class="btn btn-secondary"> Add job </a>
+			<a type="button" href="/job/add/" class="btn btn-secondary"> Add job </a>
 		</p>
 	{% endif %}
 	{% for work in works_list %}
@@ -35,8 +35,8 @@
 			</table>
 			{% if current_user.id in [work.team_leader, 1] %}
 				<div>
-					<a type="button" class="btn btn-warning" href="/edit_job/{{ work.id }}"> Edit job </a>
-					<a type="button" class="btn btn-danger" href="/delete_job/{{ work.id }}"> Delete job </a>
+					<a type="button" class="btn btn-warning" href="/job/edit/{{ work.id }}"> Edit job </a>
+					<a type="button" class="btn btn-danger" href="/job/edit/{{ work.id }}"> Delete job </a>
 				</div>
 			{% endif %}
 		</p>

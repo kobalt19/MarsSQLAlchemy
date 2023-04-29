@@ -3,8 +3,10 @@ from flask import Flask, redirect, render_template
 from flask_login import current_user, LoginManager, login_user, login_required, logout_user
 from flask_restful import Api
 from data import db_session, users_resources
+from data.departments import Department
 from data.users import User
 from data.jobs import Jobs
+from forms.department import AddDepForm
 from forms.user import LoginForm, RegisterForm
 from forms.job import AddJobForm
 
@@ -28,9 +30,18 @@ def load_user(id_):
     return db_sess.get(User, id_)
 
 
-def fullname(job):
-    worker = db_sess.get(User, job.team_leader)
-    return f'{worker.surname} {worker.name}'
+def fullname(obj):
+    if isinstance(obj, Jobs):
+        worker = db_sess.get(User, obj.team_leader)
+        return f'{worker.surname} {worker.name}'
+    if isinstance(obj, Department):
+        chief = obj.chief
+        return f'{chief.surname} {chief.name}'
+
+
+def get_members(dep):
+    members_list = dep.members
+    return ', '.join(f'{member.surname} {member.name}' for member in members_list)
 
 
 @app.route('/')
@@ -88,7 +99,7 @@ def login():
     return render_template('login.html', title='Авторизация', form=form)
 
 
-@app.route('/add_job/', methods={'GET', 'POST'})
+@app.route('/job/add/', methods={'GET', 'POST'})
 def add_job():
     form = AddJobForm()
     if form.validate_on_submit():
@@ -109,7 +120,7 @@ def add_job():
             team_leader=form.team_leader.data,
             job=form.job_desc.data,
             work_size=form.work_size.data,
-            collaborators=form.collaborators.data,
+            collaborators=collaborators,
             start_date=form.start_date.data,
             end_date=form.end_date.data,
         )
@@ -123,7 +134,7 @@ def add_job():
     return render_template('add_job.html', title='Добавление работы', form=form)
 
 
-@app.route('/edit_job/<int:id_>', methods={'GET', 'POST'})
+@app.route('/job/edit/<int:id_>', methods={'GET', 'POST'})
 def edit_job(id_):
     form = AddJobForm()
     if form.validate_on_submit():
@@ -150,7 +161,7 @@ def edit_job(id_):
             job.team_leader = form.team_leader.data
             job.job = form.job_desc.data
             job.work_size = form.work_size.data
-            job.collaborators = form.collaborators.data
+            job.collaborators = collaborators
             job.start_date = form.start_date.data
             job.end_date = form.end_date.data
             db_sess.commit()
@@ -161,7 +172,7 @@ def edit_job(id_):
     return render_template('add_job.html', title='Редактирование работы', form=form)
 
 
-@app.route('/delete_job/<int:id_>')
+@app.route('/job/delete/<int:id_>')
 def delete_job(id_):
     job = db_sess.get(Jobs, id_)
     if not current_user.is_authenticated or (job and job.team_leader not in {1, current_user.id}):
@@ -175,6 +186,107 @@ def delete_job(id_):
         db_sess.rollback()
         raise err
     return redirect('/')
+
+
+@app.route('/departments/')
+def departments():
+    kwargs = {
+        'title': 'List of departments',
+        'departments': db_sess.query(Department).all(),
+        'fullname': fullname,
+        'get_members': get_members,
+    }
+    return render_template('departments.html', **kwargs)
+
+
+@app.route('/department/add/', methods={'GET', 'POST'})
+def add_department():
+    form = AddDepForm()
+    all_users = tuple(f'{user.surname} {user.name}' for user in db_sess.query(User).all())
+    form.chief.choices = all_users
+    form.members.choices = all_users
+    if not current_user.is_authenticated or current_user.id != 1:
+        return render_template('error.html', title='Ошибка!', message='У вас нет права на добавление департамента!')
+    if form.validate_on_submit():
+        chief_surname, chief_name = form.chief.data.split()
+        chief = db_sess.query(User).filter((User.surname == chief_surname) & (User.name == chief_name)).first()
+        if not chief:
+            return render_template('add_department.html', title='Добавление департамента', form=form,
+                                   message='Такой пользователь не найден!')
+        members_fullnames = form.members.data
+        members_list = []
+        for member_surname, member_name in (s.split() for s in members_fullnames):
+            member = db_sess.query(User).filter((User.surname == member_surname) & (User.name == member_name)).first()
+            if not member:
+                return render_template('add_department.html', title='Добавление департамента', form=form,
+                                       message='Такой пользователь не найден!')
+            members_list.append(member)
+        dep = Department(
+            title=form.title.data,
+            chief_id=chief.id,
+            email=form.email.data,
+            members=members_list,
+        )
+        try:
+            db_sess.add(dep)
+            db_sess.commit()
+        except BaseException as err:
+            db_sess.rollback()
+            raise err
+        return redirect('/departments/')
+    return render_template('add_department.html', title='Добавление департамента', form=form)
+
+
+@app.route('/department/edit/<int:id_>', methods={'GET', 'POST'})
+def edit_depatment(id_):
+    form = AddDepForm()
+    if not current_user.is_authenticated:
+        return render_template('error.html', title='Ошибка!', message='Вы не авторизованы!')
+    dep = db_sess.get(Department, id_)
+    if current_user.id not in {dep.chief_id, 1}:
+        return render_template('error.html', title='Ошибка!',
+                               message='У вас нет права на редактирование этого департамента!')
+    all_users = tuple(f'{user.surname} {user.name}' for user in db_sess.query(User).all())
+    form.chief.choices = all_users
+    form.members.choices = all_users
+    if form.validate_on_submit():
+        chief_surname, chief_name = form.chief.data.split()
+        chief = db_sess.query(User).filter((User.surname == chief_surname) & (User.name == chief_name)).first()
+        if not chief:
+            return render_template('add_department.html', title='Редактирование департамента', form=form,
+                                   message='Такой пользователь не найден!')
+        members_fullnames = form.members.data
+        members_list = []
+        for member_surname, member_name in (s.split() for s in members_fullnames):
+            member = db_sess.query(User).filter((User.surname == member_surname) & (User.name == member_name)).first()
+            if not member:
+                return render_template('add_department.html', title='Редактирование департамента', form=form,
+                                       message='Такой пользователь не найден!')
+            members_list.append(member)
+        try:
+            dep.title = form.title.data
+            dep.chief_id = chief.id
+            dep.email = form.email.data
+            db_sess.commit()
+        except BaseException as err:
+            db_sess.rollback()
+            raise err
+        return redirect('/departments/')
+    return render_template('add_department.html', title='Редактирование департамента', form=form)
+
+
+@app.route('/department/delete/<int:id_>')
+def delete_department(id_):
+    dep = db_sess.get(Department, id_)
+    if not dep:
+        return render_template('error.html', title='Ошибка!', message='Департамент не найден!')
+    try:
+        db_sess.delete(dep)
+        db_sess.commit()
+    except BaseException as err:
+        db_sess.rollback()
+        raise err
+    return redirect('/departments/')
 
 
 @login_required

@@ -19,7 +19,8 @@ class User(SqlAlchemyBase, UserMixin):
     email = sa.Column(sa.String, index=True, unique=True, nullable=True)
     hashed_password = sa.Column(sa.String, nullable=True)
     modified_date = sa.Column(sa.DateTime, default=dt.datetime.now)
-    department = orm.relationship('Department', back_populates='chief')
+    departments = orm.relationship('Department', secondary='association_users_to_deps', backref='members')
+    jobs = orm.relationship('Jobs', secondary='association_users_to_jobs', backref='collaborators')
 
     def __repr__(self):
         return f'<Colonist> {self.surname} {self.name} {self.age} years'
