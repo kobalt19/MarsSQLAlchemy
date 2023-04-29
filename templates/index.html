@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
-	<h2> Works log </h2>
-	<a type="button" href="add_job" class="btn btn-secondary"> Add job </a>
+	<h2 align="center"> Works log </h2>
+	{% if current_user.is_authenticated %}
+		<p>
+			<a type="button" href="add_job" class="btn btn-secondary"> Add job </a>
+		</p>
+	{% endif %}
 	{% for work in works_list %}
 		<p>
 			<h3> Action # {{ loop.index }} </h3>
@@ -29,10 +33,12 @@
 					</tr>
 				</tbody>
 			</table>
-			<div>
-				<a type="button" class="btn btn-warning" href="/edit_job/{{ work.id }}"> Edit job </a>
-				<a type="button" class="btn btn-danger" href="/delete_job/{{ work.id }}"> Delete job </a>
-			</div>
+			{% if current_user.id in [work.team_leader, 1] %}
+				<div>
+					<a type="button" class="btn btn-warning" href="/edit_job/{{ work.id }}"> Edit job </a>
+					<a type="button" class="btn btn-danger" href="/delete_job/{{ work.id }}"> Delete job </a>
+				</div>
+			{% endif %}
 		</p>
 	{% endfor %}
 {% endblock %}
