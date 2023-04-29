@@ -7,7 +7,7 @@ association_table = sa.Table('association_users_to_jobs', SqlAlchemyBase.metadat
                              sa.Column('user', sa.ForeignKey('users.id')), sa.Column('job', sa.ForeignKey('jobs.id')))
 
 
-class Jobs(SqlAlchemyBase):
+class Jobs(SqlAlchemyBase, SerializerMixin):
     __tablename__ = 'jobs'
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     team_leader = sa.Column(sa.Integer, sa.ForeignKey('users.id'))
