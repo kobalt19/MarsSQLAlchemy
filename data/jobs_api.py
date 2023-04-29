@@ -5,7 +5,7 @@ from .jobs import Jobs
 api = Blueprint('jobs_api', __name__, template_folder='templates')
 
 
-@api.route('/api/jobs')
+@api.route('/api/jobs/')
 def get_all_jobs():
     session = db_session.create_session()
     all_jobs = session.query(Jobs).all()
@@ -14,8 +14,11 @@ def get_all_jobs():
     ) for job in all_jobs]})
 
 
-@api.route('/api/jobs/<int:id_>')
+@api.route('/api/jobs/<id_>')
 def get_one_job(id_):
+    if not id_.isdigit():
+        return jsonify({'error': 'Id must be a number'})
+    id_ = int(id_)
     session = db_session.create_session()
     job = session.get(Jobs, id_)
     if not job:
