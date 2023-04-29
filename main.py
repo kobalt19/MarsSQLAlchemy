@@ -6,21 +6,23 @@ from data import db_session, users_resources
 from data.departments import Department
 from data.users import User
 from data.jobs import Jobs
+from data import jobs_api
 from forms.department import AddDepForm
 from forms.user import LoginForm, RegisterForm
 from forms.job import AddJobForm
+
+db_session.global_init('db/mars_explorer.db')
+db_sess = db_session.create_session()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 app.config['PERMANENT_SESSION_LIFETIME'] = dt.timedelta(
     days=365
 )
+app.register_blueprint(jobs_api.api)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-
-db_session.global_init('db/mars_explorer.db')
-db_sess = db_session.create_session()
 
 api = Api(app)
 
