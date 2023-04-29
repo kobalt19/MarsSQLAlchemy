@@ -1,17 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
 	<h2> Works log </h2>
+	<a type="button" href="add_job" class="btn btn-secondary"> Add job </a>
 	{% for work in works_list %}
 		<p>
 			<h3> Action # {{ loop.index }} </h3>
 			<table class="table">
 				<thead>
 					<tr>
-						<th scope="col"> Title of activity </th>
-						<th scope="col"> Team leader </th>
-						<th scope="col"> Duration </th>
-						<th scope="col"> List of collaborators </th>
-						<th scope="col"> Is finished </th>
+						<th scope="col" class="table-secondary"> Title of activity </th>
+						<th scope="col" class="table-secondary"> Team leader </th>
+						<th scope="col" class="table-secondary"> Duration </th>
+						<th scope="col" class="table-secondary"> List of collaborators </th>
+						<th scope="col" class="table-secondary"> Is finished </th>
 					</tr>
 				</thead>
 				<tbody>
@@ -28,7 +29,10 @@
 					</tr>
 				</tbody>
 			</table>
+			<div>
+				<a type="button" class="btn btn-warning" href="/edit_job/{{ work.id }}"> Edit job </a>
+				<a type="button" class="btn btn-danger" href="/delete_job/{{ work.id }}"> Delete job </a>
+			</div>
 		</p>
 	{% endfor %}
-	<a type="button" href="add_job" class="btn btn-primary"> Add a new job </a>
 {% endblock %}
